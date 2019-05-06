@@ -1,3 +1,4 @@
+*.rdb
 
 # Created by https://www.gitignore.io/api/go,jetbrains
 # Edit at https://www.gitignore.io/?templates=go,jetbrains

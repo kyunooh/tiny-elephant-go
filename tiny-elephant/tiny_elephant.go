@@ -1,4 +1,4 @@
-package tiny_elephant_go
+package tiny_elephant
 
 import (
 	"encoding/binary"
@@ -13,11 +13,12 @@ import (
 )
 
 const hashValueSize = 8
+
 // Minhash Prefix
 const minPrefix = "min_____"
+
 // Secondary Index Prefix
 const siPrefix = "sec__index_____"
-
 
 type InMemoryCluster struct {
 	secondaryIndexDb int
@@ -69,11 +70,11 @@ func NewMinhashFromSignature(seed int64, signature []uint64) *Minhash {
 }
 
 func NewInMemoryCluster(redisHost string,
-						redisDb int,
-						numOfPerm int,
-						seed int64,
-						loadDataPer uint16,
-					) InMemoryCluster {
+	redisDb int,
+	numOfPerm int,
+	seed int64,
+	loadDataPer uint16,
+) InMemoryCluster {
 	return InMemoryCluster{
 		numOfPerm:   numOfPerm,
 		seed:        seed,
@@ -117,14 +118,14 @@ func (cluster *InMemoryCluster) updateSecondaryIndex(key string, streams []strin
 	for i, hash := range copyHashes {
 		updatedHash := updatedHashes[i]
 		if hash != updatedHash {
-			orgSecondaryKey := fmt.Sprintf(siPrefix + "%v-%v", i, hash)
+			orgSecondaryKey := fmt.Sprintf(siPrefix+"%v-%v", i, hash)
 			pipe.LRem(orgSecondaryKey, 1, key)
-			updatedSecondaryKey := fmt.Sprintf(siPrefix + "%v-%v", i, updatedHashes[i])
+			updatedSecondaryKey := fmt.Sprintf(siPrefix+"%v-%v", i, updatedHashes[i])
 			pipe.LPush(updatedSecondaryKey, key)
 		}
 	}
 	signatureJson, _ := json.Marshal(minhash.mw.Signature())
-	err := pipe.Set(minPrefix + key, signatureJson, 0).Err()
+	err := pipe.Set(minPrefix+key, signatureJson, 0).Err()
 	if err != nil {
 		panic(err)
 	}
@@ -137,7 +138,7 @@ func (cluster *InMemoryCluster) MostCommon(key string, top int) []kv {
 	var keys []string
 
 	for i, hash := range hashes {
-		secondaryKey := fmt.Sprintf(siPrefix + "%v-%v", i, hash)
+		secondaryKey := fmt.Sprintf(siPrefix+"%v-%v", i, hash)
 		keysInSecondaryIndex := cluster.redis.LRange(secondaryKey, 0, -1).Val()
 		keys = append(keys, keysInSecondaryIndex...)
 	}
@@ -170,7 +171,7 @@ func (cluster *InMemoryCluster) generateAndSaveMinhash(key string, streams []str
 		minhash.mw.Push([]byte(stream))
 	}
 	signatureJson, _ := json.Marshal(minhash.mw.Signature())
-	err := cluster.redis.Set(minPrefix + key, signatureJson, 0).Err()
+	err := cluster.redis.Set(minPrefix+key, signatureJson, 0).Err()
 	if err != nil {
 		panic(err)
 	}
